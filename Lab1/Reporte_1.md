@@ -33,7 +33,8 @@ loops, help manage repetitive tasks efficiently, making it a preferred choice fo
 
 # Object-Oriented Programming (OOP) in Python
 
-Object-Oriented Programming (OOP) is a programming paradigm that organizes code into reusable and structured components known as objects. Python supports OOP, allowing developers to create and manage complex systems efficiently.
+Object-Oriented Programming (OOP) is a programming paradigm that organizes code into reusable and structured components known as objects. 
+Python supports OOP, allowing developers to create and manage complex systems efficiently.
 
 ## Key Components of OOP
 
@@ -60,15 +61,32 @@ Polymorphism enables objects to share a common interface while having different 
 
 ## Use of OOP in Python
 
-To apply OOP in Python, developers create classes that define attributes and methods, then instantiate objects based on these classes. Encapsulation ensures controlled access to data, inheritance allows reusing existing class properties, and polymorphism provides flexibility by enabling different implementations of a shared behavior.
+To apply OOP in Python, developers create classes that define attributes and methods, then instantiate objects based on these classes. Encapsulation ensures controlled access to data,
+ inheritance allows reusing existing class properties, and polymorphism provides flexibility by enabling different implementations of a shared behavior.
 
-## Sección 2
+# Problems
 
-Descripción de la segunda sección.
+## Problem 1
 
-### Subsección 2.1
+Write a program that reads a positive integer "n" entered by the user and then displays on the screen the sum of all integers from 1 to n.
 
-Detalles adicionales sobre la subsección.
+```python
+def main():
+
+    n = int(input("Introduce un entero positivo: ")) # The user introduces the number to apply the addition to.
+
+    suma = n * (n + 1) // 2 
+
+    print(f"La suma de los primeros {n} enteros positivos es: {suma}") # Print the addition.
+
+if __name__ == "__main__":
+    main()
+```
+
+The solution involves reading a positive integer n from the user and calculating the sum of all integers from 1 to n. Instead of using 
+a loop to add each number sequentially, we utilize a mathematical formula for summing the first n positive integers:
+
+Sum = (n(n+1))/2
 
 ## Conclusión
 
