@@ -251,14 +251,19 @@ A second map should be displayed showing the **path** taken by the robot using a
 
 ### Solution
 
-The program starts by importing `random` and `numpy` to handle matrix creation and obstacle placement. It prompts the user for a matrix size (ensuring it is at least **5x5**) and initializes two matrices: **one for the environment (`m`)** and **one for tracking movement (`d`)**. The matrix is filled with **random obstacles (`"X"`)** and open spaces (`"o"`), with the **robot starting at (0,0) (`"R"`)** and the **destination at the bottom-right (`"D"`)**.
+The program starts by importing `random` and `numpy` to handle matrix creation and obstacle placement. It prompts the user for a matrix 
+size (ensuring it is at least **5x5**) and initializes two matrices: **one for the environment (`m`)** and **one for tracking movement 
+(`d`)**. The matrix is filled with **random obstacles (`"X"`)** and open spaces (`"o"`), with the **robot starting at (0,0) (`"R"`)** 
+and the **destination at the bottom-right (`"D"`)**.
 
-The robot moves using a `while` loop, following a **priority-based movement strategy**: it first tries to **move right**, then **down**, updating its position and marking the path in the direction matrix (`d`) using arrows (`→`, `↓`). If both right and down are blocked, the program **backtracks by resetting the robot’s position to the next row** and trying again. If no valid path is found after exploring all options, the program prints **"No valid path exists"** and terminates. If the robot **successfully reaches the goal**, it prints both matrices: **one showing obstacles and free spaces, and another displaying the path taken with arrows**. Finally, the **total number of moves** taken is displayed.
-
-### **Summary**  
-The program simulates a **pathfinding algorithm in a grid with obstacles**, ensuring the robot finds a valid path or determines if reaching the goal is impossible. It uses **nested loops for initialization**, a **while loop for movement**, and **conditional statements (`if-elif`)** to control direction. The use of **randomized obstacles** adds unpredictability, and the program efficiently **tracks the robot's journey** by updating the matrix with directional arrows.
-
-## Referencias
-
-- [Referencia 1](http://ejemplo.com)
-- [Referencia 2](http://ejemplo.com)
+The robot moves using a `while` loop, following a **priority-based movement strategy**: it first tries to **move right**, then 
+**down**, updating its position and marking the path in the direction matrix (`d`) using arrows (`→`, `↓`). If both right and down are 
+blocked, the program **backtracks by resetting the robot’s position to the next row** and trying again. If no valid path is found after 
+exploring all options, the program prints **"No valid path exists"** and terminates. If the robot **successfully reaches the goal**, it 
+prints both matrices: **one showing obstacles and free spaces, and another displaying the path taken with arrows**. Finally, the 
+**total number of moves** taken is displayed.
+ 
+The program simulates a **pathfinding algorithm in a grid with obstacles**, ensuring the robot finds a valid path or determines if 
+reaching the goal is impossible. It uses **nested loops for initialization**, a **while loop for movement**, and **conditional 
+statements (`if-elif`)** to control direction. The use of **randomized obstacles** adds unpredictability, and the program efficiently 
+**tracks the robot's journey** by updating the matrix with directional arrows.
