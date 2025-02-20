@@ -267,3 +267,60 @@ The program simulates a **pathfinding algorithm in a grid with obstacles**, ensu
 reaching the goal is impossible. It uses **nested loops for initialization**, a **while loop for movement**, and **conditional 
 statements (`if-elif`)** to control direction. The use of **randomized obstacles** adds unpredictability, and the program efficiently 
 **tracks the robot's journey** by updating the matrix with directional arrows.
+
+# Problem 7
+
+This solution employs the Object-Oriented Programming (OOP) paradigm to implement a simple inventory management system. The design is 
+structured around two primary classes: Producto and Inventario, which encapsulate the behavior and data for individual products and the 
+overall inventory, respectively. A menu-driven interface in the main() function allows the user to interact with the system.
+
+## Key components
+
+### 1. `Producto` Class
+- **Purpose:**  
+  Represents a single product within the inventory.
+  
+- **Attributes:**  
+  - `nombre`: The name of the product.  
+  - `precio`: The price per unit of the product.  
+  - `cantidad_en_stock`: The current stock level or quantity available.
+
+- **Methods:**  
+  - `vender(cantidad_vendida)`:  
+    Reduces the product’s stock by the specified amount if sufficient stock is available. If not, it prints a message indicating insufficient stock.
+  - `mostrar_informacion()`:  
+    Returns a formatted string that contains the product’s details (name, price, and stock).
+
+### 2. `Inventario` Class
+- **Purpose:**  
+  Manages a collection of `Producto` objects and provides functionality to update and retrieve inventory data.
+  
+- **Attributes:**  
+  - `productos`: A list that stores instances of the `Producto` class.
+  
+- **Methods:**  
+  - `agregar_producto(producto)`:  
+    Adds a new `Producto` object to the inventory list.
+  - `actualizar_stock(nombre, cantidad_vendida)`:  
+    Searches for a product by its name and reduces its stock using the `vender` method if found.
+  - `mostrar_informacion_producto(nombre)`:  
+    Displays detailed information for a specific product by calling its `mostrar_informacion` method.
+  - `calcular_valor_inventario()`:  
+    Calculates the total value of the inventory by summing the product of each product’s price and its available stock.
+  - `encontrar_producto(nombre)`:  
+    A helper method that performs a case-insensitive search for a product in the inventory by its name.
+
+### 3. `main()` Function
+- **Purpose:**  
+  Serves as the entry point of the program, offering a user interface to interact with the inventory system.
+  
+- **Flow:**  
+  - An instance of the `Inventario` class is created.
+  - The program enters a loop where it displays a menu with options to:
+    - Add a product
+    - Sell a product
+    - Show product information
+    - Calculate and display the total inventory value
+    - Exit the program
+  - Based on the user’s choice, the corresponding methods of the `Producto` or `Inventario` classes are invoked to perform the required operations.
+  - The loop continues until the user chooses to exit.
