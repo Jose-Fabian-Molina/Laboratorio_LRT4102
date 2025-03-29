@@ -26,8 +26,8 @@ def main():
     print("  d -> Mover en X")
     print("  a -> Mover en -X")
     print("  s -> Mover en -Y")
-    print("  -> para girar a la derecha")
-    print("  <- para girar a la izquierda")
+    print("  o para girar a la derecha")
+    print("  i para girar a la izquierda")
     print("  p -> Detenerse")
     print("Presiona 'q' para salir.")
 
