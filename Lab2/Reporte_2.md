@@ -28,3 +28,13 @@ This code demonstrates how to draw geometric shapes (such as a triangle and a sq
 - Position control for turtlesim (P).
 - Position control for turtlesim (P).
 - Position control for turtlesim (P).
+- Compare the development of each one of the controllers, by using Plot Juggler or any other graphing tool.
+
+### turtle_pc.py
+This code uses a **proportional controller** to move the turtlesim turtle to a user-specified (x, y) position. It subscribes to the turtle's pose and publishes velocity commands to drive the turtle. The program prompts the user for x and y coordinates, then calculates the error in position and adjusts the turtle's movement accordingly using proportional control.
+
+### turtle_pdc.py
+This code implements a **PD (Proportional-Derivative) controller** to move the turtlesim turtle to a user-specified (x, y) position. The PD controller computes the control signal based on both the current error and the rate of change of the error. This results in smoother movement. The node subscribes to the turtle's pose and continuously updates the command until the turtle reaches the desired position.
+
+### turtle_pidc.py
+This code uses a **PID (Proportional-Integral-Derivative) controller** to move the turtlesim turtle to a user-specified (x, y) position. It calculates the proportional, integral, and derivative terms for both the linear (distance) and angular (orientation) movements. The code prompts the user for the target coordinates, and the PID control loop computes the necessary commands to drive the turtle accurately to the goal.
