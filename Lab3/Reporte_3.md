@@ -103,5 +103,3 @@ if __name__ == '__main__':
 
 6. **Infinite Loop:**
    - The `run()` method contains an infinite loop that continuously prompts the user for new goal inputs and teleports `turtle1` accordingly, allowing for repeated testing.
-
-This solution meets the requirements by using the existing turtle (`turtle1`), allowing user-defined goal parameters, calculating and displaying DTG and ATG, and teleporting the turtle directly to the desired pose in an infinite loop.
