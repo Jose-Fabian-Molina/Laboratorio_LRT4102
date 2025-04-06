@@ -1,96 +1,153 @@
 #!/usr/bin/env python3
 import rospy
-from turtlesim.srv import Spawn, SpawnRequest
+from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
+from turtlesim.srv import Spawn, TeleportAbsolute, SpawnRequest
 import math
 
-class TurtleLab3Node:
+class TurtleLab3SingleTurtle:
     def __init__(self):
-        rospy.init_node('turtle_lab3_node')
+        rospy.init_node('turtle_lab3_single_turtle_controller')
         
-        # Subscriber to get the current pose of turtle1 (the default turtle)
-        self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.pose_callback)
+        # Fixed starting position for the controlled turtle
+        self.start_x = 5.5
+        self.start_y = 5.5
+        self.start_theta = 0.0
         
-        # Service proxy for spawning a new turtle
+        # Desired goal parameters (user defined)
+        self.goal_x = 0.0
+        self.goal_y = 0.0
+        self.goal_theta = 0.0
+        
+        # Controller gain for proportional control
+        self.Kp = 1.0
+        
+        # Thresholds for position and orientation errors
+        self.position_threshold = 0.1
+        self.angle_threshold = 0.05  # in radians
+        
+        # Set the loop rate (10 Hz)
+        self.rate = rospy.Rate(10)
+        
+        # Current pose of the controlled turtle (goal_turtle)
+        self.current_pose = None
+        
+        # Flag to indicate if the turtle has been spawned
+        self.spawned = False
+        
+        # Create a publisher for the turtle's velocity commands
+        self.velocity_publisher = rospy.Publisher('/goal_turtle/cmd_vel', Twist, queue_size=10)
+        
+        # Wait for the spawn service to be available and create a proxy
         rospy.wait_for_service('spawn')
         self.spawn_service = rospy.ServiceProxy('spawn', Spawn)
         
-        # Current pose of turtle1 (used for calculating DTG and ATG)
-        self.current_pose = None
-        
-        # Controller parameters and thresholds (these remain fixed)
-        self.Kp = 1.0
-        
-        # Loop rate (10 Hz)
-        self.rate = rospy.Rate(10)
-        
-        # Turtle counter for unique naming of spawned turtles
-        self.turtle_count = 1
+        # (Teleport service proxy will be created later after the turtle is spawned)
 
     def pose_callback(self, pose):
-        # Update the current pose from turtle1
+        # Update the current pose of the controlled turtle
         self.current_pose = pose
 
-    def get_user_goal(self):
-        # Prompt the user for the desired goal coordinates and orientation
-        x = float(input("Enter desired x coordinate: "))
-        y = float(input("Enter desired y coordinate: "))
-        theta = float(input("Enter desired orientation (radians): "))
-        return x, y, theta
+    def spawn_or_reset_turtle(self):
+        """
+        If the turtle is not spawned yet, spawn it at the fixed starting position.
+        Otherwise, teleport the existing turtle to the starting position.
+        """
+        if not self.spawned:
+            req = SpawnRequest()
+            req.x = self.start_x
+            req.y = self.start_y
+            req.theta = self.start_theta
+            req.name = "goal_turtle"
+            try:
+                response = self.spawn_service(req.x, req.y, req.theta, req.name)
+                rospy.loginfo("Spawned turtle '%s' at starting position (%.2f, %.2f)", response.name, req.x, req.y)
+                self.spawned = True
+                # Subscribe to the spawned turtle's pose topic
+                rospy.Subscriber('/goal_turtle/pose', Pose, self.pose_callback)
+            except rospy.ServiceException as e:
+                rospy.logerr("Spawn service call failed: %s", e)
+        else:
+            # Turtle already spawned; use teleport service to reset its pose
+            rospy.wait_for_service('/goal_turtle/teleport_absolute')
+            try:
+                teleport = rospy.ServiceProxy('/goal_turtle/teleport_absolute', TeleportAbsolute)
+                teleport(self.start_x, self.start_y, self.start_theta)
+                rospy.loginfo("Teleported 'goal_turtle' to starting position (%.2f, %.2f)", self.start_x, self.start_y)
+            except rospy.ServiceException as e:
+                rospy.logerr("Teleport service call failed: %s", e)
 
-    def calculate_and_display_metrics(self, goal_x, goal_y):
+    def get_goal_from_user(self):
+        # Prompt the user for desired goal coordinates and orientation (radians)
+        self.goal_x = float(input("Enter desired x coordinate: "))
+        self.goal_y = float(input("Enter desired y coordinate: "))
+        self.goal_theta = float(input("Enter desired orientation (radians): "))
+
+    def calculate_dtg_atg(self):
         if self.current_pose is None:
             rospy.loginfo("Current pose not available yet.")
             return None, None
 
-        dtg = math.sqrt((goal_x - self.current_pose.x)**2 + (goal_y - self.current_pose.y)**2)
-        atg = math.atan2(goal_y - self.current_pose.y, goal_x - self.current_pose.x)
-        rospy.loginfo("Calculated DTG: %.2f, ATG: %.2f", dtg, atg)
+        dtg = math.sqrt((self.goal_x - self.current_pose.x)**2 + (self.goal_y - self.current_pose.y)**2)
+        atg = math.atan2(self.goal_y - self.current_pose.y, self.goal_x - self.current_pose.x)
+        rospy.loginfo("DTG: %.2f, ATG: %.2f", dtg, atg)
         return dtg, atg
 
-    def spawn_turtle_at_goal(self, goal_x, goal_y, goal_theta):
+    def move_to_goal(self):
         """
-        Spawn a new turtle directly at the user-defined goal position with the specified orientation.
+        Use a proportional controller to move the turtle from the starting position to the user-defined goal.
         """
-        # Create a unique name for the spawned turtle
-        turtle_name = f"goal_turtle_{self.turtle_count}"
-        self.turtle_count += 1
+        while not rospy.is_shutdown():
+            if self.current_pose is None:
+                self.rate.sleep()
+                continue
 
-        req = SpawnRequest()
-        req.x = goal_x
-        req.y = goal_y
-        req.theta = goal_theta
-        req.name = turtle_name
+            dtg, atg = self.calculate_dtg_atg()
+            if dtg is None:
+                self.rate.sleep()
+                continue
 
-        try:
-            response = self.spawn_service(req.x, req.y, req.theta, req.name)
-            rospy.loginfo("Spawned turtle '%s' at (%.2f, %.2f) with orientation %.2f",
-                          response.name, req.x, req.y, req.theta)
-        except rospy.ServiceException as e:
-            rospy.logerr("Spawn service call failed: %s", e)
+            twist_msg = Twist()
+            if dtg > self.position_threshold:
+                # Control for moving to the goal position
+                angle_error = atg - self.current_pose.theta
+                # Normalize angle error to [-pi, pi]
+                angle_error = math.atan2(math.sin(angle_error), math.cos(angle_error))
+                twist_msg.linear.x = self.Kp * dtg
+                twist_msg.angular.z = self.Kp * angle_error
+                rospy.loginfo("Moving: DTG=%.2f, ATG=%.2f", dtg, atg)
+            else:
+                # Position reached; now adjust orientation to desired goal_theta
+                orientation_error = self.goal_theta - self.current_pose.theta
+                orientation_error = math.atan2(math.sin(orientation_error), math.cos(orientation_error))
+                twist_msg.linear.x = 0.0
+                twist_msg.angular.z = self.Kp * orientation_error
+                rospy.loginfo("Adjusting orientation: Orientation error=%.2f", orientation_error)
+                if abs(orientation_error) < self.angle_threshold:
+                    rospy.loginfo("Goal position and desired orientation reached!")
+                    break
+
+            self.velocity_publisher.publish(twist_msg)
+            self.rate.sleep()
 
     def run(self):
-        # Infinite loop for continuous operation
+        # Infinite loop: for each iteration, get new goal parameters and drive the turtle accordingly
         while not rospy.is_shutdown():
-            # Get the desired goal parameters from the user (x, y, theta)
-            goal_x, goal_y, goal_theta = self.get_user_goal()
-            
-            # Calculate and display DTG and ATG based on the current pose of turtle1
-            dtg, atg = self.calculate_and_display_metrics(goal_x, goal_y)
-            if dtg is None:
-                rospy.sleep(1)
-                continue
-            
-            # Spawn a new turtle directly at the goal position with the desired orientation.
-            self.spawn_turtle_at_goal(goal_x, goal_y, goal_theta)
-            
-            # Wait a moment before next iteration
-            rospy.loginfo("Waiting for new goal input...\n")
+            rospy.loginfo("----- New Goal Input -----")
+            self.get_goal_from_user()
+            # Reset the turtle to the fixed starting position
+            self.spawn_or_reset_turtle()
+            rospy.sleep(2)  # Wait for the turtle's pose to update
+            # Calculate and display DTG and ATG (for informational purposes)
+            self.calculate_dtg_atg()
+            # Use a proportional controller to drive the turtle from the starting position to the goal
+            self.move_to_goal()
+            rospy.loginfo("Goal reached. Waiting for new goal input...\n")
             rospy.sleep(2)
 
 if __name__ == '__main__':
     try:
-        node = TurtleLab3Node()
-        node.run()
+        controller = TurtleLab3SingleTurtle()
+        controller.run()
     except rospy.ROSInterruptException:
         pass
