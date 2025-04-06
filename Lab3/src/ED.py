@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import rospy
-from turtlesim.srv import Spawn, SpawnRequest, TeleportAbsolute
+from turtlesim.srv import TeleportAbsolute
 from turtlesim.msg import Pose
 import math
 
@@ -8,41 +8,18 @@ class TurtleTeleportController:
     def __init__(self):
         rospy.init_node('turtle_teleport_controller')
         
-        # Wait for the spawn service and create a service proxy
-        rospy.wait_for_service('spawn')
-        self.spawn_service = rospy.ServiceProxy('spawn', Spawn)
+        # Wait for the teleport service for turtle1 to be available
+        rospy.wait_for_service('/turtle1/teleport_absolute')
+        self.teleport_service = rospy.ServiceProxy('/turtle1/teleport_absolute', TeleportAbsolute)
         
-        # Use a fixed turtle name for the single turtle that will be reused
-        self.turtle_name = "goal_turtle"
-        
-        # Spawn the turtle only once at an initial default position
-        self.spawn_turtle_once()
-        
-        # Wait for the teleport service for the spawned turtle and create a proxy
-        rospy.wait_for_service(f'/{self.turtle_name}/teleport_absolute')
-        self.teleport_service = rospy.ServiceProxy(f'/{self.turtle_name}/teleport_absolute', TeleportAbsolute)
-        
-        # Subscribe to the turtle's pose topic to get its current pose
-        rospy.Subscriber(f'/{self.turtle_name}/pose', Pose, self.pose_callback)
+        # Subscribe to turtle1's pose topic to get its current pose
+        rospy.Subscriber('/turtle1/pose', Pose, self.pose_callback)
         
         self.current_pose = None
         self.rate = rospy.Rate(10)
 
-    def spawn_turtle_once(self):
-        req = SpawnRequest()
-        # Spawn at a default position (this initial position is arbitrary)
-        req.x = 5.5
-        req.y = 5.5
-        req.theta = 0.0
-        req.name = self.turtle_name
-        try:
-            response = self.spawn_service(req.x, req.y, req.theta, req.name)
-            rospy.loginfo("Spawned turtle '%s' at (%.2f, %.2f) with orientation %.2f", 
-                          response.name, req.x, req.y, req.theta)
-        except rospy.ServiceException as e:
-            rospy.logerr("Spawn service call failed: %s", e)
-
     def pose_callback(self, pose):
+        # Update the current pose of turtle1
         self.current_pose = pose
 
     def get_goal_from_user(self):
@@ -55,32 +32,31 @@ class TurtleTeleportController:
     def calculate_dtg_atg(self, goal_x, goal_y):
         """
         Calculate and display:
-         - DTG: Euclidean distance between current pose and goal.
-         - ATG: Angle to goal using atan2.
+         - DTG: Euclidean distance between the current pose and the goal.
+         - ATG: Angle to the goal using atan2.
          
-         Velocity mapping explanation (if movement were used):
-           - Linear velocity ∝ DTG (moves faster when farther away)
-           - Angular velocity ∝ (ATG - current orientation) (to correct heading)
+         Velocity mapping explanation (if movement were applied):
+           - Linear velocity ∝ DTG (turtle moves faster when farther away)
+           - Angular velocity ∝ (ATG - current orientation) (to correct the heading)
         """
         if self.current_pose is None:
             rospy.loginfo("Current pose not available yet.")
             return None, None
-
         dtg = math.sqrt((goal_x - self.current_pose.x)**2 + (goal_y - self.current_pose.y)**2)
         atg = math.atan2(goal_y - self.current_pose.y, goal_x - self.current_pose.x)
         rospy.loginfo("DTG: %.2f, ATG: %.2f", dtg, atg)
         return dtg, atg
 
     def run(self):
-        # Infinite loop: get new goal parameters from the user and teleport the turtle there.
+        # Infinite loop: get new goal parameters from the user and teleport turtle1 accordingly
         while not rospy.is_shutdown():
             goal_x, goal_y, goal_theta = self.get_goal_from_user()
-            # Calculate and display DTG and ATG based on the current pose of the turtle
+            # Calculate and display DTG and ATG based on turtle1's current pose
             self.calculate_dtg_atg(goal_x, goal_y)
-            # Directly teleport the turtle to the user-defined goal position and orientation
+            # Directly teleport turtle1 to the user-defined goal pose (no gradual movement)
             try:
                 self.teleport_service(goal_x, goal_y, goal_theta)
-                rospy.loginfo("Teleported turtle to (%.2f, %.2f) with orientation %.2f",
+                rospy.loginfo("Teleported turtle1 to (%.2f, %.2f) with orientation %.2f",
                               goal_x, goal_y, goal_theta)
             except rospy.ServiceException as e:
                 rospy.logerr("Teleport service call failed: %s", e)
